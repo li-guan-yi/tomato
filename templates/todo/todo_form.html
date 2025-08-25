@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} - 番茄鐘待辦清單{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-pencil"></i> {{ title }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'todo_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> 返回列表
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check"></i> 儲存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 自動設定開始日期為今天
+    if (!$('#id_start_date').val()) {
+        const today = new Date().toISOString().split('T')[0];
+        $('#id_start_date').val(today);
+    }
+    
+    // 自動設定結束日期為開始日期後7天
+    if (!$('#id_end_date').val()) {
+        const startDate = $('#id_start_date').val();
+        if (startDate) {
+            const endDate = new Date(startDate);
+            endDate.setDate(endDate.getDate() + 7);
+            $('#id_end_date').val(endDate.toISOString().split('T')[0]);
+        }
+    }
+    
+    // 當開始日期改變時，自動調整結束日期
+    $('#id_start_date').change(function() {
+        const startDate = $(this).val();
+        if (startDate && !$('#id_end_date').val()) {
+            const endDate = new Date(startDate);
+            endDate.setDate(endDate.getDate() + 7);
+            $('#id_end_date').val(endDate.toISOString().split('T')[0]);
+        }
+    });
+});
+</script>
+{% endblock %}

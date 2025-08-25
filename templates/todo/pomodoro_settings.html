@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}番茄鐘設定 - 番茄鐘待辦清單{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-gear"></i> 番茄鐘設定
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-info-circle"></i> 番茄鐘工作法說明</h6>
+                    <p class="mb-0">
+                        番茄鐘工作法是一種時間管理方法，將工作時間分割成25分鐘的工作時段，
+                        每個工作時段後休息5分鐘，每4個工作時段後休息15分鐘。
+                        您可以根據個人需求調整這些時間設定。
+                    </p>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'home' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> 返回首頁
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check"></i> 儲存設定
+                        </button>
+                    </div>
+                </form>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-clock"></i> 預覽時間分配</h6>
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>工作時段</span>
+                                    <span id="work-preview">25 分鐘</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>休息時段</span>
+                                    <span id="break-preview">5 分鐘</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>長休息時段</span>
+                                    <span id="long-break-preview">15 分鐘</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>長休息前工作時段數</span>
+                                    <span id="sessions-preview">4 個</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-calculator"></i> 時間計算</h6>
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>一個完整循環</span>
+                                    <span id="cycle-time">2 小時</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>工作時間比例</span>
+                                    <span id="work-ratio">83%</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>休息時間比例</span>
+                                    <span id="break-ratio">17%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    function updatePreview() {
+        const workDuration = parseInt($('#id_work_duration').val()) || 25;
+        const breakDuration = parseInt($('#id_break_duration').val()) || 5;
+        const longBreakDuration = parseInt($('#id_long_break_duration').val()) || 15;
+        const sessionsBeforeLongBreak = parseInt($('#id_sessions_before_long_break').val()) || 4;
+        
+        // 更新預覽
+        $('#work-preview').text(workDuration + ' 分鐘');
+        $('#break-preview').text(breakDuration + ' 分鐘');
+        $('#long-break-preview').text(longBreakDuration + ' 分鐘');
+        $('#sessions-preview').text(sessionsBeforeLongBreak + ' 個');
+        
+        // 計算時間
+        const cycleTime = (workDuration * sessionsBeforeLongBreak) + 
+                         (breakDuration * (sessionsBeforeLongBreak - 1)) + 
+                         longBreakDuration;
+        const cycleHours = Math.floor(cycleTime / 60);
+        const cycleMinutes = cycleTime % 60;
+        $('#cycle-time').text(cycleHours + ' 小時 ' + cycleMinutes + ' 分鐘');
+        
+        // 計算比例
+        const totalWorkTime = workDuration * sessionsBeforeLongBreak;
+        const totalBreakTime = (breakDuration * (sessionsBeforeLongBreak - 1)) + longBreakDuration;
+        const workRatio = Math.round((totalWorkTime / cycleTime) * 100);
+        const breakRatio = Math.round((totalBreakTime / cycleTime) * 100);
+        
+        $('#work-ratio').text(workRatio + '%');
+        $('#break-ratio').text(breakRatio + '%');
+    }
+    
+    // 監聽表單欄位變化
+    $('#id_work_duration, #id_break_duration, #id_long_break_duration, #id_sessions_before_long_break').on('input', updatePreview);
+    
+    // 初始化預覽
+    updatePreview();
+});
+</script>
+{% endblock %}

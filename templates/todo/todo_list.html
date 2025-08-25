@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}待辦事項列表 - 番茄鐘待辦清單{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-list-check"></i> 待辦事項列表</h2>
+    <a href="{% url 'todo_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus"></i> 新增待辦事項
+    </a>
+</div>
+
+<!-- 篩選器 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <select class="form-select" id="status-filter">
+                    <option value="">所有狀態</option>
+                    <option value="completed">已完成</option>
+                    <option value="pending">未完成</option>
+                    <option value="overdue">已過期</option>
+                    <option value="due-today">今天到期</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control" id="search-input" placeholder="搜尋待辦事項...">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 待辦事項列表 -->
+<div id="todo-list">
+    {% for todo in todos %}
+        <div class="todo-item card mb-3 {% if todo.completed %}completed{% endif %} {% if todo.is_overdue %}overdue{% endif %} {% if todo.is_due_today %}due-today{% endif %}" 
+             data-status="{% if todo.completed %}completed{% elif todo.is_overdue %}overdue{% elif todo.is_due_today %}due-today{% else %}pending{% endif %}"
+             data-title="{{ todo.title|lower }}">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center">
+                            <div class="form-check me-3">
+                                <input class="form-check-input toggle-checkbox" type="checkbox" 
+                                       data-id="{{ todo.id }}" 
+                                       {% if todo.completed %}checked{% endif %}>
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-1 {% if todo.completed %}text-decoration-line-through{% endif %}">
+                                    {{ todo.title }}
+                                </h5>
+                                {% if todo.description %}
+                                    <p class="card-text text-muted mb-1">{{ todo.description }}</p>
+                                {% endif %}
+                                <div class="text-muted small">
+                                    <i class="bi bi-calendar-event"></i> 開始：{{ todo.start_date }}
+                                    <i class="bi bi-calendar-check ms-3"></i> 結束：{{ todo.end_date }}
+                                    {% if todo.is_overdue %}
+                                        <span class="badge bg-danger ms-2">已過期</span>
+                                    {% elif todo.is_due_today %}
+                                        <span class="badge bg-warning ms-2">今天到期</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'todo_update' todo.id %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-pencil"></i> 編輯
+                            </a>
+                            <a href="{% url 'todo_delete' todo.id %}" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-trash"></i> 刪除
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="text-center py-5">
+            <i class="bi bi-inbox display-1 text-muted"></i>
+            <h4 class="text-muted mt-3">尚無待辦事項</h4>
+            <p class="text-muted">開始新增您的第一個待辦事項吧！</p>
+            <a href="{% url 'todo_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus"></i> 新增待辦事項
+            </a>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 篩選功能
+    $('#status-filter, #search-input').on('change keyup', function() {
+        const statusFilter = $('#status-filter').val();
+        const searchTerm = $('#search-input').val().toLowerCase();
+        
+        $('.todo-item').each(function() {
+            const item = $(this);
+            const status = item.data('status');
+            const title = item.data('title');
+            
+            let showItem = true;
+            
+            // 狀態篩選
+            if (statusFilter && status !== statusFilter) {
+                showItem = false;
+            }
+            
+            // 搜尋篩選
+            if (searchTerm && !title.includes(searchTerm)) {
+                showItem = false;
+            }
+            
+            item.toggle(showItem);
+        });
+    });
+    
+    // 切換完成狀態
+    $('.toggle-checkbox').change(function() {
+        const todoId = $(this).data('id');
+        const checkbox = $(this);
+        
+        $.ajax({
+            url: `/todos/${todoId}/toggle/`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val() || '{{ csrf_token }}'
+            },
+            success: function(response) {
+                const todoItem = checkbox.closest('.todo-item');
+                const title = todoItem.find('.card-title');
+                
+                if (response.completed) {
+                    todoItem.addClass('completed');
+                    title.addClass('text-decoration-line-through');
+                } else {
+                    todoItem.removeClass('completed');
+                    title.removeClass('text-decoration-line-through');
+                }
+                
+                // 更新狀態屬性
+                todoItem.attr('data-status', response.completed ? 'completed' : 'pending');
+            },
+            error: function() {
+                // 如果請求失敗，恢復checkbox狀態
+                checkbox.prop('checked', !checkbox.prop('checked'));
+                alert('操作失敗，請重試');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
