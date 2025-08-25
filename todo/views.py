@@ -20,11 +20,19 @@ def home(request):
     today_todos = todos.filter(end_date=today, completed=False)
     overdue_todos = todos.filter(end_date__lt=today, completed=False)
     
+    # 獲取今天已完成的工作時段數量
+    today_work_sessions = PomodoroSession.objects.filter(
+        session_type='work',
+        is_completed=True,
+        completed_at__date=today
+    ).count()
+    
     context = {
         'todos': todos,
         'today_todos': today_todos,
         'overdue_todos': overdue_todos,
         'settings': settings,
+        'today_work_sessions': today_work_sessions,
     }
     return render(request, 'todo/home.html', context)
 

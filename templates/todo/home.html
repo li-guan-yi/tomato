@@ -181,8 +181,8 @@ $(document).ready(function() {
     let totalTime = 25 * 60;
     let isRunning = false;
     let currentSession = null;
-    let sessionCount = 1;
-    let isWorkSession = true;
+    let sessionCount = {{ today_work_sessions }} + 1; // 從今天已完成的工作時段數量開始
+    let isWorkSession = true; // 每天重置都從工作時段開始
     
     // 番茄鐘設定
     const settings = {
@@ -368,8 +368,29 @@ $(document).ready(function() {
         });
     });
     
+    // 初始化函數
+    function initializePomodoro() {
+        // 檢查是否是新的一天
+        const today = new Date().toDateString();
+        const lastVisitDate = localStorage.getItem('lastVisitDate');
+        
+        if (lastVisitDate !== today) {
+            // 新的一天，重置計數器
+            sessionCount = 1;
+            isWorkSession = true;
+            localStorage.setItem('lastVisitDate', today);
+        }
+        
+        // 更新顯示
+        updateDisplay();
+        
+        // 更新時段類型顯示
+        $('#session-type').text(isWorkSession ? '工作時段' : '休息時段');
+        $('#session-count').text(`第 ${sessionCount} 個番茄鐘`);
+    }
+    
     // 初始化顯示
-    updateDisplay();
+    initializePomodoro();
 });
 </script>
 {% endblock %}
