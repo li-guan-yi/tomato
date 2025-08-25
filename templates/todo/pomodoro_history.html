@@ -113,7 +113,7 @@
                                 {% endif %}
                             </td>
                             <td>{{ session.duration }} 分鐘</td>
-                            <td>{{ session.actual_duration }} 分鐘</td>
+                            <td>{{ session.actual_duration|format_duration }}</td>
                             <td>{{ session.started_at|date:"Y-m-d H:i" }}</td>
                             <td>{{ session.completed_at|date:"Y-m-d H:i" }}</td>
                             <td>
